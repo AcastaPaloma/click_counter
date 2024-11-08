@@ -1,0 +1,3 @@
+PyQt6>=6.0.0
+pyobjc-framework-Quartz>=9.0.0; sys_platform == 'darwin'
+pywin32>=305; sys_platform == 'win32'
