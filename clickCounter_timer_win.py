@@ -19,11 +19,9 @@ class GlobalClickMonitor(QThread):
 
     def run(self):
         self.running = True
-        # Hook the mouse click event
         mouse.on_click(self.click_handler)
-        # Keep the thread running
         while self.running:
-            self.msleep(100)  # Sleep to prevent high CPU usage
+            self.msleep(100)  
 
     def click_handler(self):
         if self.running:
@@ -42,17 +40,14 @@ class ClickCounter(QMainWindow):
         self.is_counting = False
         self.output_folder = ""
 
-        # Initialize timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_timer)
 
-        # Initialize click monitor
         self.click_monitor = GlobalClickMonitor()
         self.click_monitor.clicked.connect(self.increment_counter)
 
         self.initUI()
 
-        # Start the click monitor thread
         self.click_monitor.start()
 
         # Check if we're on macOS and show permission instructions if needed
@@ -104,13 +99,74 @@ class ClickCounter(QMainWindow):
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.exec()
 
+    def update_timer(self):
+        self.seconds += 1
+        self.timer_label.setText(f"Elapsed Time: {self.seconds} seconds")
+
+    def increment_counter(self):
+        self.click_count += 1
+        self.click_count_label.setText(f"Click Count: {self.click_count}")
+
+    def initUI(self):
+        self.setWindowTitle("Click Counter")
+        self.setGeometry(100, 100, 400, 200)
+
+        central_widget = QWidget()
+        layout = QVBoxLayout()
+
+        self.timer_label = QLabel("Elapsed Time: 0 seconds", self)
+        self.timer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.timer_label)
+
+        self.click_count_label = QLabel("Click Count: 0", self)
+        self.click_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.click_count_label)
+
+        self.start_button = QPushButton("Start Counting", self)
+        self.start_button.clicked.connect(self.start_counting)
+        layout.addWidget(self.start_button)
+
+        self.stop_button = QPushButton("Stop Counting", self)
+        self.stop_button.clicked.connect(self.stop_counting)
+        layout.addWidget(self.stop_button)
+
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+
+    def start_counting(self):
+        if not self.is_counting:
+            self.is_counting = True
+            self.timer.start(1000)  # Update every second
+
+    def save_click_data(self, output_folder, filename, elapsed_time, click_count):
+        os.makedirs(output_folder, exist_ok=True)
+        filepath = os.path.join(output_folder, filename)
+        file_exists = os.path.isfile(filepath)
+
+        with open(filepath, mode='a', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file_exists:
+                writer.writerow(["Elapsed Time (seconds)", "Click Count"])
+            writer.writerow([elapsed_time, click_count])
+    
+    def stop_counting(self):
+        if self.is_counting:
+            self.is_counting = False
+            self.timer.stop()
+
+        
+        self.output_folder = os.path.join(os.getcwd(), "output")
+        self.save_click_data(self.output_folder, "click_data.csv", self.seconds, self.click_count)
+
+        
+        self.click_monitor.stop()
+        self.close()
     # ... [rest of the previous ClickCounter class implementation remains exactly the same] ...
 
 
 def main():
     app = QApplication(sys.argv)
 
-    # Set application-wide font
     font = QFont("Helvetica", 10)
     app.setFont(font)
 

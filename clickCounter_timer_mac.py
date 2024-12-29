@@ -9,6 +9,7 @@ from PyQt6.QtCore import QTimer, Qt, pyqtSignal, QObject, QThread
 from PyQt6.QtGui import QFont
 import Quartz
 
+CSV_FILE_PATH = './output/'
 
 class GlobalClickMonitor(QThread):
     clicked = pyqtSignal()
